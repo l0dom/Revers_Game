@@ -3,12 +3,8 @@ __author__ = 'Андрей'
 import pygame
 from Header import *
 from Interface import Interface
+from GameConstructor import *
 
-def mouseIn(mouse,start,end):
-    if (mouse[0]>start[0])and(mouse[1]>start[1]):
-        if (mouse[0]<end[0])and(mouse[1]<end[1]):
-            return True
-    return False
 
 
 
@@ -76,7 +72,7 @@ class Scene:
 
 #Класс сцена загрузки
 class LoadScene(Scene):
-    def __init__(self, time = 3000, *argv):
+    def __init__(self, time = 500, *argv):
         Scene.__init__(self, *argv)
         self.run = 0
         self.time = time
@@ -100,7 +96,7 @@ class LoadScene(Scene):
         self.run+=dt;
 
     def _draw(self, dt):
-        self.display.fill((255,255,255))
+        self.display.blit(self.manager.imgDict["background.jpg"],(0,0))
 
 
 #Класс эллементов меню
@@ -134,12 +130,16 @@ class Menu:
             if self.index == index:
                 if mouseIn(mouse, (x, y), (x+item['select'].get_rect().w,x+item['select'].get_rect().h)):
                     self.index = index
-                    if mouseUp : self.call()
+                    if mouseUp :
+                        self.call()
+                        print("a")
                 y += item['select'].get_rect().h
             else:
                 if mouseIn(mouse, (x, y), (x+item['select'].get_rect().w,y+item['select'].get_rect().h)):
                     self.index = index
-                    if mouseUp : self.call()
+                    if mouseUp :
+                        self.call()
+                        print("b")
                 y += item['no select'].get_rect().h
             index += 1
 
@@ -178,7 +178,7 @@ class MenuScene(Scene):
         self.the_end()
 
     def NewGamePvP(self):
-        self.set_next_scene(GamePvP())
+        self.set_next_scene(GameScene())
         self.the_end()
 
     def exit(self):
@@ -233,14 +233,24 @@ class MenuScene(Scene):
 
     def _draw(self, dt):
         self.display.fill((255,255,255))
+        self.manager.imgDict["background.jpg"],(0,0)
         self.menu.draw(self.display)
 
-class GamePvP(Scene):
+class GameScene(Scene):
 
     def _start(self):
-        self.interface=Interface(self.display,self.manager.imgDict)
-        self.interface.restart()
+        self.size = 4
+        self.interface=Interface(self.display,self.manager.getTransformImgDict(self.size),self.size)
+        self.game = GameConstructor(self.size,reversGVP,reversDescend,reversStart)
+
+    def _event(self, event):
+        for e in event.get():
+            if e.type == pygame.MOUSEBUTTONUP:
+                pair =  self.interface.event()
+                if pair[0]!=-1:
+                    self.game._descend(pair[0],pair[1])
+
 
     def _draw(self, dt):
-        self.interface.draw()
+        self.interface.draw(self.game.field,self.game.validPath)
 
