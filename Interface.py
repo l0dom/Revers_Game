@@ -38,13 +38,13 @@ class Interface:
 
         for (keyX,keyY) in path:
             self.display.blit(self.imgDict["point"],
-                              (self.FIELD_START_WIDTH+keyX*self.step,
-                               self.FIELD_START_HEIGHT+keyY*self.step))
+                              (self.FIELD_START_WIDTH+keyY*self.step,
+                               self.FIELD_START_HEIGHT+keyX*self.step))
 
     def event(self):
         mouse = pygame.mouse.get_pos()
         mouse = mouse[0]-self.FIELD_START_WIDTH,mouse[1]-self.FIELD_START_HEIGHT
         if mouseIn(mouse,(0,0),(self.step*self.size,self.step*self.size)):
-            return mouse[0]//self.step,mouse[1]//self.step
+            return mouse[1]//self.step,mouse[0]//self.step
         else:
             return -1,-1

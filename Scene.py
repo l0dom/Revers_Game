@@ -239,9 +239,9 @@ class MenuScene(Scene):
 class GameScene(Scene):
 
     def _start(self):
-        self.size = 4
+        self.size = 3
         self.interface=Interface(self.display,self.manager.getTransformImgDict(self.size),self.size)
-        self.game = GameConstructor(self.size,reversGVP,reversDescend,reversStart)
+        self.game = GameConstructor(self.size,reversGVP,reversDescend,reversStart,reversEvent)
 
     def _event(self, event):
         for e in event.get():
@@ -249,6 +249,11 @@ class GameScene(Scene):
                 pair =  self.interface.event()
                 if pair[0]!=-1:
                     self.game._descend(pair[0],pair[1])
+        self.game._event()
+        if self.game.end:
+            self.set_next_scene(GameScene())
+            self.the_end()
+
 
 
     def _draw(self, dt):
