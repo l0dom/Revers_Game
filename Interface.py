@@ -12,10 +12,14 @@ class Interface:
         self.FIELD_START_WIDTH=int(WINDOW_WIDTH/2-WINDOW_HEIGHT/5*2)
         self.FIELD_START_HEIGHT=int(WINDOW_HEIGHT/10)
         self.step=imgDict["block_black"].get_rect().h
+        self.select = (WINDOW_WIDTH/2-self.step/2,WINDOW_HEIGHT-self.step)
 
-    def draw(self,field,path):
+    def draw(self,points,person,field,path={}):
         self.display.fill((255,255,255))
         self.display.blit(self.imgDict["background"],(0,0))
+
+        blockName= "point_white" if person==1 else "point_black"
+        self.display.blit(self.imgDict[blockName],self.select)
 
         iRow=iColumn=0
         for row in field:

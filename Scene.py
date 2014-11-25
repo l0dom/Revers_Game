@@ -239,23 +239,27 @@ class MenuScene(Scene):
 class GameScene(Scene):
 
     def _start(self):
-        self.size = 3
+        self.size = 8
         self.interface=Interface(self.display,self.manager.getTransformImgDict(self.size),self.size)
-        self.game = GameConstructor(self.size,reversGVP,reversDescend,reversStart,reversEvent)
+        self.game = GameConstructor(interface=self.interface,
+                                    size=self.size,
+                                    getValidPath= reversGVP,
+                                    descend=reversDescend,
+                                    start=reversStart,
+                                    event=reversEvent,
+                                    playerOne=playerMan,
+                                    playerTwo=playerPC)
 
     def _event(self, event):
-        for e in event.get():
-            if e.type == pygame.MOUSEBUTTONUP:
-                pair =  self.interface.event()
-                if pair[0]!=-1:
-                    self.game._descend(pair[0],pair[1])
-        self.game._event()
+        self.game._event(event)
         if self.game.end:
             self.set_next_scene(GameScene())
             self.the_end()
 
 
+    def _update(self, dt):
+        self.game.update(dt)
 
     def _draw(self, dt):
-        self.interface.draw(self.game.field,self.game.validPath)
+        self.game.draw()
 
