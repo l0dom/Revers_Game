@@ -1,11 +1,11 @@
 __author__ = 'Андрей'
 
-from Scene import LoadScene,MenuScene
+from Scene import LoadScene,MainMenu
 from Game import Game
 
 def main():
 
-    scene = LoadScene(3000,MenuScene())
+    scene = LoadScene(3000,MainMenu())
     game = Game(scene=scene)
     game.set_caption(title="Revers")
     game.game_loop()

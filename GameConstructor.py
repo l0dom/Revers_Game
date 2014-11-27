@@ -2,6 +2,7 @@ __author__ = 'Андрей'
 
 from random import randint
 from pygame import MOUSEBUTTONUP
+from online import *
 
 ''' 0-empty
     1-white
@@ -9,11 +10,13 @@ from pygame import MOUSEBUTTONUP
 
 '''players'''
 def playerMan(self,event):
-        pair = -1,-1
-        for e in event.get():
-            if e.type == MOUSEBUTTONUP:
-                pair =  self.interface.event()
-        return pair
+    pair = -1,-1
+    for e in event.get():
+        if e.type == MOUSEBUTTONUP:
+            pair =  self.interface.event()
+    if self.online:
+        self.server.sendPickle(pair)
+    return pair
 
 def playerPC(self,event):
     maxValue = -1
@@ -24,8 +27,15 @@ def playerPC(self,event):
         if len(self.validPath[key]) > maxValue:
             pairs=[key]
             maxValue = len(self.validPath[key])
-    rnd=randint(0,len(pairs)-1)
-    return pairs[rnd]
+    if len(pairs)!=0:
+        rnd=randint(0,len(pairs)-1)
+        return pairs[rnd]
+    else:
+        return -1,-1
+
+def playerOnline(self,event):
+    return self.server.getPickle()
+
 '''end players'''
 
 '''revers'''
@@ -39,7 +49,12 @@ def reversDescend (self,x,y):
         self.person = 1 if self.person==-1 else -1
         self.validPath = self._getValidPath()
 
+
 def reversStart (self,size):
+
+    self.getValidPath=reversGVP
+    self.descend=reversDescend
+    self.event=reversEvent
     self.field = []
     self.size=size
     for i in range(size):
@@ -83,26 +98,69 @@ def reversEvent(self):
         self.validPath=self._getValidPath()
         if len(self.validPath)==0:
             self.end=True
+            if self.players[-1]==playerMan or self.players[1]==playerMan:
+                if self.points[-1]==self.points[1]:
+                    self.message = "Tie!"
+                elif self.points[-1]>self.points[1]:
+                    self.message = "Black win!"
+                else:
+                    self.message = "White win!"
+            else:
+                self.message = "bots played"
 '''end_revers'''
 
 
-class GameConstructor:
-    def __init__(self,interface,size,getValidPath,descend,start,event,playerOne,playerTwo):
-        self.interface=interface
-        self.getValidPath=getValidPath
-        self.descend=descend
-        self.start=start
-        self.event=event
-        rnd=randint(0,1)
-        self.players= {1-2*rnd: playerOne, -1+2*rnd: playerTwo}
+'''revers black hall'''
+def reversBlackHallStart (self,size):
+    reversStart(self,size)
+    success = False
+    while not success:
+        x=randint(0,size-1)
+        y=randint(0,size-1)
+        if self.field[x][y] == 0:
+            self.field[x][y] = 2
+            success=True
+'''end revers black hall'''
 
+'''online'''
+def startHost(self,size):
+    self.server = Host()
+    self.server.start()
+    self.server.sendPickle((self.gameType,self.rnd,size))
+    startFunc[self.gameType](self,size)
+
+def startClient(self,size):
+    self.server = Client()
+    self.server.start("127.0.0.1")
+    self.gameType,self.rnd,size=self.server.getPickle()
+    self.rnd = 1 - self.rnd
+    startFunc[self.gameType](self,size)
+'''end online'''
+
+startFunc={"revers":reversStart,
+           "reversBH":reversBlackHallStart}
+
+class GameConstructor:
+    def __init__(self,interface,gameType,playerOne,playerTwo,onlineStart=None,size=8):
+        self.gameType=gameType
+        if onlineStart is None:
+            self.start=startFunc[gameType]
+            self.online = False
+        else:
+            self.start=onlineStart
+            self.online = True
+        self.interface=interface
         self.person = 1
         self.end=False
+        self.rnd=randint(0,1)
         self._start(size)
+        self.players= {1-2*self.rnd: playerOne, -1+2*self.rnd: playerTwo}
         self.validPath = self._getValidPath()
-        self.points = {-1:0,1:0}
+        self.points = {-1:2,1:2}
         self.active =False
         self.load = 0
+        self.message = None
+
 
 
     def _descend(self,x,y):
@@ -110,6 +168,12 @@ class GameConstructor:
             self.descend(self,x,y)
             self.active=False
             self.load=0
+            self.interface.animated=True
+            self.points = self.points = {-1:0,1:0}
+            for row in self.field:
+                for column in row:
+                    if column==1 or column ==-1:
+                        self.points[column]+=1
 
     def _getValidPath(self):
         return self.getValidPath(self)
@@ -122,17 +186,23 @@ class GameConstructor:
         pair = self.players[self.person](self,events)
         if pair[0]!=-1:
             self._descend(pair[0],pair[1])
+        if self.online:
+            if self.server.error is not None:
+                self.end=True
+                self.message = 'Connection lost'
 
     def update (self,dt):
         if self.active==False:
-            if self.load<=500:
+            if self.load<=1000:
                 self.load+=dt
             else:
                 self.active=True
 
     def draw(self):
+        path = self.validPath if self.players[self.person]==playerMan else {}
         self.interface.draw(self.points,
                     self.person,
                     self.field,
-                    self.validPath)
+                    path)
+
 

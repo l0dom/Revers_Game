@@ -4,8 +4,8 @@ from pygame.locals import USEREVENT
 
 
 END_SCENE =  USEREVENT + 1
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
+WINDOW_WIDTH = 960
+WINDOW_HEIGHT = 540
 
 def mouseIn(mouse,start,end):
     if (mouse[0]>start[0])and(mouse[1]>start[1]):

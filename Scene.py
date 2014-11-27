@@ -96,7 +96,7 @@ class LoadScene(Scene):
         self.run+=dt;
 
     def _draw(self, dt):
-        self.display.blit(self.manager.imgDict["background.jpg"],(0,0))
+        self.display.blit(self.manager.imgDict["background-load"],(0,0))
 
 
 #Класс эллементов меню
@@ -120,7 +120,7 @@ class Menu:
         if self.index < 0:
             self.index = len(self.menu)-1
 
-    def mouseEvent(self,mouseUp=False):
+    def mouseEvent(self, mouseUp):
         mouse = pygame.mouse.get_pos()
 
         index = 0
@@ -128,18 +128,15 @@ class Menu:
         y = self.y
         for item in self.menu:
             if self.index == index:
-                if mouseIn(mouse, (x, y), (x+item['select'].get_rect().w,x+item['select'].get_rect().h)):
-                    self.index = index
-                    if mouseUp :
-                        self.call()
-                        print("a")
-                y += item['select'].get_rect().h
-            else:
                 if mouseIn(mouse, (x, y), (x+item['select'].get_rect().w,y+item['select'].get_rect().h)):
                     self.index = index
                     if mouseUp :
                         self.call()
-                        print("b")
+                        break
+                y += item['select'].get_rect().h
+            else:
+                if mouseIn(mouse, (x, y), (x+item['no select'].get_rect().w,y+item['no select'].get_rect().h)):
+                    self.index = index
                 y += item['no select'].get_rect().h
             index += 1
 
@@ -170,90 +167,290 @@ class Menu:
 
 #Класс меню
 class MenuScene(Scene):
-    def item_call(self):
-        print("item_call")
+    def __init__(self, *argv):
+        Scene.__init__(self, *argv)
+        self.menu = Menu((5,5))
+
+    def _event(self, event):
+        if not self.is_end():
+            self.menu.mouseEvent(event)
+            for e in event.get():
+                if e.type == pygame.KEYDOWN:
+                    if e.key == pygame.K_DOWN:
+                        self.menu.down()
+                    elif e.key == pygame.K_UP:
+                        self.menu.up()
+                    elif e.key == pygame.K_RETURN:
+                        self.menu.call()
+                if e.type == pygame.MOUSEBUTTONUP:
+                    self.menu.mouseEvent(True)
+
+
+    def _draw(self, dt):
+        self.display.blit(self.manager.imgDict["background"],(0,0))
+        self.menu.draw(self.display)
+
+class MainMenu(MenuScene):
+    def __init__(self, *argv):
+        MenuScene.__init__(self, *argv)
+
+    def openNewGame(self):
+        self.set_next_scene(SelectOpponent())
         self.the_end()
 
-    def newGame(self):
+    def OpenOptions(self):
+        self.set_next_scene(Dialog("it`s not work",MainMenu()))
         self.the_end()
 
-    def NewGamePvP(self):
-        self.set_next_scene(GameScene())
+    def OpenAbout(self):
+        self.set_next_scene(Dialog("Made by Lodom",MainMenu()))
         self.the_end()
 
     def exit(self):
-        self.set_next_scene(LoadScene(1500,None))
+        self.set_next_scene(LoadScene())
         self.the_end()
 
     def _start(self):
-        self.menu = Menu((self.display.get_rect().w/20,
-                          self.display.get_rect().h/20))
-
         # Именно таким образом мы можем получить текст в pygame
         # В данном случае мы используем системный шрифт.
-        font      = pygame.font.SysFont("Monospace", 40, bold=False, italic=False)
-        font_bold = pygame.font.SysFont("Monospace", 50, bold=True, italic=False)
-        item = "Один игрок"
+        font      = pygame.font.SysFont("Monospace", 30, bold=False, italic=False)
+        font_bold = pygame.font.SysFont("Monospace", 40, bold=True, italic=False)
+        item = "NewGame"
         self.menu.add_menu_item(font.render(item,True,(0,0,0)),
                                 font_bold.render(item,True,(0,0,0)),
-                                self.newGame)
-        item = "Два игрока"
+                                self.openNewGame)
+        item = "Options"
         self.menu.add_menu_item(font.render(item,True,(0,0,0)),
                                 font_bold.render(item,True,(0,0,0)),
-                                self.NewGamePvP)
-        item = "Сетевая игра"
+                                self.OpenOptions)
+        item = "About"
         self.menu.add_menu_item(font.render(item,True,(0,0,0)),
                                 font_bold.render(item,True,(0,0,0)),
-                                self.item_call)
-        item = "Настройки"
-        self.menu.add_menu_item(font.render(item,True,(0,0,0)),
-                                font_bold.render(item,True,(0,0,0)),
-                                self.item_call)
-        item = "Как играть"
-        self.menu.add_menu_item(font.render(item,True,(0,0,0)),
-                                font_bold.render(item,True,(0,0,0)),
-                                self.item_call)
-        item = "Выход"
+                                self.OpenAbout)
+        item = "Exit"
         self.menu.add_menu_item(font.render(item,True,(0,0,0)),
                                 font_bold.render(item,True,(0,0,0)),
                                 self.exit)
 
-    def _event(self, event):
-        self.menu.mouseEvent()
-        for e in event.get():
-            if e.type == pygame.KEYDOWN:
-                if e.key == pygame.K_DOWN:
-                    self.menu.down()
-                elif e.key == pygame.K_UP:
-                    self.menu.up()
-                elif e.key == pygame.K_RETURN:
-                    self.menu.call()
-            if e.type == pygame.MOUSEBUTTONUP:
-                self.menu.mouseEvent(True)
 
-    def _draw(self, dt):
-        self.display.fill((255,255,255))
-        self.manager.imgDict["background.jpg"],(0,0)
-        self.menu.draw(self.display)
+class SelectOpponent(MenuScene):
+    def back(self):
+        self.set_next_scene(MainMenu())
+        self.the_end()
 
-class GameScene(Scene):
+    def versusPC(self):
+        self.properties["player"]=playerPC
+        self.set_next_scene(SelectGameType(self.properties))
+        self.the_end()
+
+    def oneComputer(self):
+        self.properties["player"]=playerMan
+        self.set_next_scene(SelectGameType(self.properties))
+        self.the_end()
+
+    def twoComputers(self):
+        self.properties["player"]=playerOnline
+        self.set_next_scene(SelectOnline(self.properties))
+        self.the_end()
 
     def _start(self):
-        self.size = 8
-        self.interface=Interface(self.display,self.manager.getTransformImgDict(self.size),self.size)
+        self.properties = {}
+        self.properties["online start"] = None
+        self.properties["size"]=8
+        # Именно таким образом мы можем получить текст в pygame
+        # В данном случае мы используем системный шрифт.
+        font      = pygame.font.SysFont("Monospace", 30, bold=False, italic=False)
+        font_bold = pygame.font.SysFont("Monospace", 40, bold=True, italic=False)
+        item = "back"
+        self.menu.add_menu_item(font.render(item,True,(0,0,0)),
+                                font_bold.render(item,True,(0,0,0)),
+                                self.back)
+        item = "Versus PC"
+        self.menu.add_menu_item(font.render(item,True,(0,0,0)),
+                                font_bold.render(item,True,(0,0,0)),
+                                self.versusPC)
+        item = "One Computer"
+        self.menu.add_menu_item(font.render(item,True,(0,0,0)),
+                                font_bold.render(item,True,(0,0,0)),
+                                self.oneComputer)
+        item = "Two computers"
+        self.menu.add_menu_item(font.render(item,True,(0,0,0)),
+                                font_bold.render(item,True,(0,0,0)),
+                                self.twoComputers)
+class SelectOnline(MenuScene):
+    def __init__(self,properties):
+        self.properties = properties
+        self.menu = Menu((5,5))
+    def back(self):
+        self.set_next_scene(SelectOpponent())
+        self.the_end()
+
+    def openClient(self):
+        self.properties["online start"] = startClient
+        self.properties["game type"] = "revers"
+        self.set_next_scene(SelectIP(self.properties))
+        self.the_end()
+
+    def openHost(self):
+        self.properties["online start"] = startHost
+        self.set_next_scene(SelectGameType(self.properties))
+        self.the_end()
+
+    def _start(self):
+        # Именно таким образом мы можем получить текст в pygame
+        # В данном случае мы используем системный шрифт.
+        font      = pygame.font.SysFont("Monospace", 30, bold=False, italic=False)
+        font_bold = pygame.font.SysFont("Monospace", 40, bold=True, italic=False)
+        item = "back"
+        self.menu.add_menu_item(font.render(item,True,(0,0,0)),
+                                font_bold.render(item,True,(0,0,0)),
+                                self.back)
+        item = "Client"
+        self.menu.add_menu_item(font.render(item,True,(0,0,0)),
+                                font_bold.render(item,True,(0,0,0)),
+                                self.openClient)
+        item = "Host"
+        self.menu.add_menu_item(font.render(item,True,(0,0,0)),
+                                font_bold.render(item,True,(0,0,0)),
+                                self.openHost)
+class SelectOptions(MenuScene):
+    pass
+class SelectGameType(MenuScene):
+    def __init__(self,properties):
+        self.properties = properties
+        self.menu = Menu((5,5))
+    def back(self):
+        if self.properties["online start"] is None:
+            self.set_next_scene(SelectOpponent())
+        else:
+            self.set_next_scene(SelectOnline(self.properties))
+        self.the_end()
+    def startRevers(self):
+        self.properties["game type"]="revers"
+        self.set_next_scene(SelectGameSize(self.properties))
+        self.the_end()
+    def startReversBH(self):
+        self.properties["game type"]="reversBH"
+        self.set_next_scene(SelectGameSize(self.properties))
+        self.the_end()
+    def _start(self):
+        # Именно таким образом мы можем получить текст в pygame
+        # В данном случае мы используем системный шрифт.
+        font      = pygame.font.SysFont("Monospace", 30, bold=False, italic=False)
+        font_bold = pygame.font.SysFont("Monospace", 40, bold=True, italic=False)
+        item = "back"
+        self.menu.add_menu_item(font.render(item,True,(0,0,0)),
+                                font_bold.render(item,True,(0,0,0)),
+                                self.back)
+        item = "Original Revers"
+        self.menu.add_menu_item(font.render(item,True,(0,0,0)),
+                                font_bold.render(item,True,(0,0,0)),
+                                self.startRevers)
+        item = "Revers with Black Hall"
+        self.menu.add_menu_item(font.render(item,True,(0,0,0)),
+                                font_bold.render(item,True,(0,0,0)),
+                                self.startReversBH)
+
+class SelectGameSize(MenuScene):
+    def __init__(self,properties):
+        self.properties = properties
+        self.menu = Menu((5,5))
+    def back(self):
+        self.set_next_scene(SelectGameType(self.properties))
+        self.the_end()
+    def startFour(self):
+        self.properties["size"]=4
+        self.set_next_scene(GameScene(self.properties))
+        self.the_end()
+    def startSix(self):
+        self.properties["size"]=6
+        self.set_next_scene(GameScene(self.properties))
+        self.the_end()
+    def startEight(self):
+        self.properties["size"]=8
+        self.set_next_scene(GameScene(self.properties))
+        self.the_end()
+    def startTen(self):
+        self.properties["size"]=10
+        self.set_next_scene(GameScene(self.properties))
+        self.the_end()
+
+
+    def _start(self):
+        # Именно таким образом мы можем получить текст в pygame
+        # В данном случае мы используем системный шрифт.
+        font      = pygame.font.SysFont("Monospace", 30, bold=False, italic=False)
+        font_bold = pygame.font.SysFont("Monospace", 40, bold=True, italic=False)
+        item = "back"
+        self.menu.add_menu_item(font.render(item,True,(0,0,0)),
+                                font_bold.render(item,True,(0,0,0)),
+                                self.back)
+        item = "4x4"
+        self.menu.add_menu_item(font.render(item,True,(0,0,0)),
+                                font_bold.render(item,True,(0,0,0)),
+                                self.startFour)
+        item = "6x6"
+        self.menu.add_menu_item(font.render(item,True,(0,0,0)),
+                                font_bold.render(item,True,(0,0,0)),
+                                self.startSix)
+        item = "8x8"
+        self.menu.add_menu_item(font.render(item,True,(0,0,0)),
+                                font_bold.render(item,True,(0,0,0)),
+                                self.startEight)
+        item = "10x10"
+        self.menu.add_menu_item(font.render(item,True,(0,0,0)),
+                                font_bold.render(item,True,(0,0,0)),
+                                self.startTen)
+
+class SelectIP(MenuScene):
+    pass
+
+class Dialog(MenuScene):
+    def __init__ (self,message,next_scene):
+        self.set_next_scene(next_scene)
+        self.message=message
+        self.menu = Menu((5,5))
+
+
+    def _start(self):
+        # Именно таким образом мы можем получить текст в pygame
+        # В данном случае мы используем системный шрифт.
+        font      = pygame.font.SysFont("Monospace", 30, bold=False, italic=False)
+        font_bold = pygame.font.SysFont("Monospace", 40, bold=True, italic=False)
+        self.font=font_bold
+        item = "ok"
+        self.menu.add_menu_item(font.render(item,True,(0,0,0)),
+                                font_bold.render(item,True,(0,0,0)),
+                                self.the_end)
+
+    def _draw(self, dt):
+        self.display.blit(self.manager.imgDict["background-2"],(0,0))
+        self.menu.draw(self.display)
+        self.display.blit(self.font.render(self.message,True,(0,0,0)),
+                          (WINDOW_WIDTH/2,WINDOW_HEIGHT/2))
+
+
+
+#Games
+class GameScene(Scene):
+    def __init__(self, properties):
+        self.prop = properties
+
+    def _start(self):
+        self.interface=Interface(self.display,self.manager.getTransformImgDict(self.prop["size"]),self.prop["size"])
         self.game = GameConstructor(interface=self.interface,
-                                    size=self.size,
-                                    getValidPath= reversGVP,
-                                    descend=reversDescend,
-                                    start=reversStart,
-                                    event=reversEvent,
+                                    size=self.prop["size"],
+                                    gameType=self.prop["game type"],
                                     playerOne=playerMan,
-                                    playerTwo=playerPC)
+                                    playerTwo=self.prop["player"],
+                                    onlineStart=self.prop["online start"])
 
     def _event(self, event):
         self.game._event(event)
         if self.game.end:
-            self.set_next_scene(GameScene())
+            if self.prop["online start"]==startHost:
+                self.game.server.close()
+            self.set_next_scene(Dialog(self.game.message,MainMenu()))
             self.the_end()
 
 
@@ -262,4 +459,7 @@ class GameScene(Scene):
 
     def _draw(self, dt):
         self.game.draw()
+
+
+
 

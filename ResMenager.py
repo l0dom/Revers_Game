@@ -57,20 +57,29 @@ class ResManager:
         return dct
 
     def loadImage(self):
-        self.imgDict = self.get_image_dict(["background.jpg",
+        self.imgDict = self.get_image_dict(["background-3.jpg",
+                                           "background-2.jpg",
+                                           "background.jpg",
                                            "point_black.png",
                                            "point_white.png",
                                            "block_white.png",
                                            "block_black.png",
+                                           "black_hall.png",
                                            "point.png"])
-        self.imgDict["background.jpg"]=pygame.transform.scale(self.imgDict["background.jpg"],
+        self.imgDict["background"]=pygame.transform.scale(self.imgDict["background-3.jpg"],
+                                                             (WINDOW_WIDTH,
+                                                              WINDOW_HEIGHT))
+        self.imgDict["background-2"]=pygame.transform.scale(self.imgDict["background-2.jpg"],
+                                                             (WINDOW_WIDTH,
+                                                              WINDOW_HEIGHT))
+        self.imgDict["background-load"]=pygame.transform.scale(self.imgDict["background.jpg"],
                                                              (WINDOW_WIDTH,
                                                               WINDOW_HEIGHT))
 
     def getTransformImgDict(self,fieldSize):
         pixelSize=int(WINDOW_HEIGHT*4/5/fieldSize)
         transformDict= {}
-        transformDict["background"]=self.imgDict["background.jpg"]
+        transformDict["background"]=self.imgDict["background-2.jpg"]
         transformDict["block_white"]=pygame.transform.scale(self.imgDict["block_white.png"],
                                                               (pixelSize,pixelSize))
         transformDict["block_black"]=pygame.transform.scale(self.imgDict["block_black.png"],
@@ -78,6 +87,8 @@ class ResManager:
         transformDict["point_white"]=pygame.transform.scale(self.imgDict["point_white.png"],
                                                            (pixelSize,pixelSize))
         transformDict["point_black"]=pygame.transform.scale(self.imgDict["point_black.png"],
+                                                           (pixelSize,pixelSize))
+        transformDict["black_hall"]=pygame.transform.scale(self.imgDict["black_hall.png"],
                                                            (pixelSize,pixelSize))
         transformDict["point"]=pygame.transform.scale(self.imgDict["point.png"],
                                                       (pixelSize,pixelSize))
